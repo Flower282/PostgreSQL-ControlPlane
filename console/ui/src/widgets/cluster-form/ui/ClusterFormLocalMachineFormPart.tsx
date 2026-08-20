@@ -1,20 +1,22 @@
-import { FC, lazy } from 'react';
+import { FC } from 'react';
 import DatabaseServersBlock from '@entities/cluster/database-servers-block';
 import AuthenticationMethodFormBlock from '@entities/authentification-method-form-block';
 import VipAddressBlock from '@entities/cluster/vip-address-block';
 import LoadBalancersBlock from '@entities/cluster/load-balancers-block';
-import { IS_EXPERT_MODE } from '@shared/model/constants.ts';
+import { useWatch } from 'react-hook-form';
+import { DATABASE_SERVERS_FIELD_NAMES } from '@entities/cluster/database-servers-block/model/const.ts';
 
-const DcsBlock = lazy(() => import('@entities/cluster/expert-mode/dcs-block/ui'));
+const ClusterFormLocalMachineFormPart: FC = () => {
+  const isHighAvailability = useWatch({ name: DATABASE_SERVERS_FIELD_NAMES.IS_HIGH_AVAILABILITY });
 
-const ClusterFormLocalMachineFormPart: FC = () => (
-  <>
-    <DatabaseServersBlock />
-    {IS_EXPERT_MODE ? <DcsBlock /> : null}
-    <AuthenticationMethodFormBlock />
-    <VipAddressBlock />
-    <LoadBalancersBlock />
-  </>
-);
+  return (
+    <>
+      <DatabaseServersBlock />
+      <AuthenticationMethodFormBlock />
+      {isHighAvailability ? <VipAddressBlock /> : null}
+      <LoadBalancersBlock />
+    </>
+  );
+};
 
 export default ClusterFormLocalMachineFormPart;

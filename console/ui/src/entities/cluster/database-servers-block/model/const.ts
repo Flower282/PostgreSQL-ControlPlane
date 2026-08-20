@@ -1,5 +1,6 @@
 export const DATABASE_SERVERS_FIELD_NAMES = Object.freeze({
   IS_CLUSTER_EXISTS: 'databaseServerExistingCluster',
+  IS_HIGH_AVAILABILITY: 'isHighAvailability',
   DATABASE_SERVERS: 'databaseServers',
   DATABASE_HOSTNAME: 'databaseServerHostname',
   DATABASE_IP_ADDRESS: 'databaseServerIpAddress',

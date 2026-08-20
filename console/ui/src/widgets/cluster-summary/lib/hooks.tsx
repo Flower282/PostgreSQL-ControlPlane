@@ -222,18 +222,13 @@ const useGetLocalMachineConfig = () => {
     {
       title: t('highAvailability'),
       children: (
-        <Stack direction="column" spacing={0.5}>
-          <Stack direction="row" spacing={0.5} alignItems="center">
-            {isHighAvailability(data) ? (
-              <CheckIcon width="24px" height="24px" style={{ fill: theme.palette.text.primary }} />
-            ) : (
-              <WarningAmberOutlinedIcon />
-            )}
-            <Typography>{isHighAvailability(data) ? t('on', { ns: 'shared' }) : t('off', { ns: 'shared' })}</Typography>
-          </Stack>
-          <Typography variant="caption" color="text.secondary">
-            {t('highAvailabilityInfo')}
-          </Typography>
+        <Stack direction="row" spacing={0.5} alignItems="center">
+          {isHighAvailability(data) ? (
+            <CheckIcon width="24px" height="24px" style={{ fill: theme.palette.text.primary }} />
+          ) : (
+            <WarningAmberOutlinedIcon />
+          )}
+          <Typography>{isHighAvailability(data) ? t('on', { ns: 'shared' }) : t('off', { ns: 'shared' })}</Typography>
         </Stack>
       ),
     },
