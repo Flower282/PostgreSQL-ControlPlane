@@ -1,0 +1,106 @@
+---
+# Install packages from repository
+- name: Gather package facts
+  ansible.builtin.package_facts:
+    manager: auto
+  when: ansible_facts.packages is not defined
+  check_mode: false
+
+# Debian
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+  register: apt_status
+  until: apt_status is success
+  delay: 5
+  retries: 3
+  environment: "{{ proxy_env | default({}) }}"
+  when:
+    - installation_method == "packages"
+    - ansible_os_family == "Debian"
+
+- name: Install system packages
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ system_packages | flatten }}"
+  register: apt_status
+  until: apt_status is success
+  delay: 5
+  retries: 3
+  environment: "{{ proxy_env | default({}) }}"
+  when:
+    - installation_method == "packages"
+    - ansible_os_family == "Debian"
+    - system_packages | default('') | length > 0
+    - item not in ansible_facts.packages
+  tags: install_packages
+
+# Install PostgreSQL from repository
+
+# Debian
+- block:
+    - name: Ensure postgresql database-cluster manager package
+      ansible.builtin.apt:
+        name: postgresql-common
+        state: present
+      register: package_status
+      until: package_status is success
+      delay: 5
+      retries: 3
+      when: "'postgresql-common' not in ansible_facts.packages"
+
+    - name: Disable initializing of a default postgresql cluster
+      ansible.builtin.replace:
+        path: /etc/postgresql-common/createcluster.conf
+        replace: create_main_cluster = false
+        regexp: ^#?create_main_cluster.*$
+
+    - name: Disable log rotation with logrotate for postgresql
+      ansible.builtin.file:
+        dest: /etc/logrotate.d/postgresql-common
+        state: absent
+      when: disable_logrotate_for_postgresql | bool
+
+    - name: Install PostgreSQL packages
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ postgresql_packages | default([]) | flatten }}"
+      register: apt_status
+      until: apt_status is success
+      delay: 5
+      retries: 3
+      when: item not in ansible_facts.packages
+  environment: "{{ proxy_env | default({}) }}"
+  when:
+    - installation_method == "packages"
+    - ansible_os_family == "Debian"
+    - postgresql_packages | default([]) | length > 0
+  tags: install_packages, install_postgres
+
+# Install packages from files (optional)
+- block:
+    - name: Copy packages into /tmp
+      ansible.builtin.copy:
+        src: "{{ files_dir | default(playbook_dir ~ '/files') }}/{{ item }}"
+        dest: /tmp/
+      loop: "{{ packages_from_file }}"
+      register: copy_packages_result
+
+    - name: Install packages
+      ansible.builtin.apt:
+        force_apt_get: true
+        deb: "/tmp/{{ item }}"
+        state: present
+      loop: "{{ packages_from_file | map('basename') | list }}"
+      register: apt_status
+      until: apt_status is success
+      delay: 5
+      retries: 3
+      when:
+        - ansible_os_family == "Debian"
+        - copy_packages_result.changed
+
+  when: packages_from_file is defined and packages_from_file | length > 0
+  tags: install_packages_from_file

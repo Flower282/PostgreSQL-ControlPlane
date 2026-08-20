@@ -1,0 +1,27 @@
+---
+
+tags:
+  - high_availability
+  - cluster
+  - postgresql
+  - postgres
+  - database
+  - automation
+  - dbaas
+  - autobase
+
+dependencies:
+  amazon.aws: ">=10.1.0"
+  community.aws: ">=10.0.0"
+  google.cloud: ">=1.7.0"
+  community.postgresql: ">=3.14.2"
+  community.docker: ">=4.6.1"
+  community.general: ">=10.7.2"
+  ansible.posix: ">=1.6.2"
+  ansible.utils: ">=5.1.2"
+
+build_ignore:
+  - molecule
+  - .dockerignore
+  - Dockerfile
+  - entrypoint.sh
