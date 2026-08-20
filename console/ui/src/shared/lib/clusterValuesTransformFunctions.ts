@@ -409,7 +409,7 @@ export const getLocalMachineEnvs = (values: ClusterFormValues, secretId?: number
  * @param values - Filled form values.
  */
 const getExtensions = (values: ClusterFormValues) =>
-  Object.entries(values?.[EXTENSION_BLOCK_FIELD_NAMES.EXTENSIONS])?.reduce(
+  Object.entries(values?.[EXTENSION_BLOCK_FIELD_NAMES.EXTENSIONS] ?? {})?.reduce(
     (acc, [key, value]) => {
       if (value?.db?.length) {
         const convertedToReqFormat = value.db.map((item) => ({

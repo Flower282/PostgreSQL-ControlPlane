@@ -30,7 +30,6 @@ import { mapFormValuesToRequestFields } from '@shared/lib/clusterValuesTransform
 
 const DatabaseBlock = lazy(() => import('@entities/cluster/expert-mode/databases-block/ui'));
 const ConnectionPoolsBlock = lazy(() => import('@entities/cluster/expert-mode/connection-pools-block/ui'));
-const ExtensionsBlock = lazy(() => import('@entities/cluster/expert-mode/extensions-block/ui'));
 const BackupsBlock = lazy(() => import('@entities/cluster/expert-mode/backups-block/ui'));
 const PostgresParametersBlock = lazy(() => import('@entities/cluster/expert-mode/postgres-parameters-block/ui'));
 const KernelParametersBlock = lazy(() => import('@entities/cluster/expert-mode/kernel-parameters-block/ui'));
@@ -144,7 +143,6 @@ const ClusterForm: React.FC<ClusterFormProps> = ({
             <>
               <DatabaseBlock />
               <ConnectionPoolsBlock />
-              <ExtensionsBlock />
               <BackupsBlock />
               <PostgresParametersBlock />
               <KernelParametersBlock />
