@@ -3,8 +3,6 @@ import {
   Checkbox,
   FormControlLabel,
   MenuItem,
-  Radio,
-  RadioGroup,
   Select,
   Slider,
   Stack,
@@ -75,43 +73,6 @@ const BackupsBlock: FC = () => {
         />
         {watchIsBackupsEnabled ? (
           <>
-            <Controller
-              control={control}
-              name={BACKUPS_BLOCK_FIELD_NAMES.BACKUP_METHOD}
-              render={({ field }) => (
-                <Stack direction="row" alignItems="center">
-                  <Stack direction="row" alignItems="center" width={250}>
-                    <Typography>{t('backupMethod')}</Typography>
-                  </Stack>
-                  <RadioGroup
-                    {...field}
-                    row
-                    onChange={(e) => {
-                      resetField(BACKUPS_BLOCK_FIELD_NAMES.CONFIG, { keepDirty: true });
-                      field.onChange(e);
-                    }}>
-                    {[
-                      { label: 'pgBackRest', value: BACKUP_METHODS.PG_BACK_REST },
-                      { label: 'WAL-G', value: BACKUP_METHODS.WAL_G },
-                    ].map(({ label, value }) => (
-                      <FormControlLabel
-                        key={value}
-                        value={value}
-                        label={label}
-                        control={<Radio />}
-                        sx={{
-                          '& .MuiFormControlLabel-label': {
-                            width: 'fit-content !important',
-                          },
-                          marginLeft: 0,
-                        }}
-                        labelPlacement="end"
-                      />
-                    ))}
-                  </RadioGroup>
-                </Stack>
-              )}
-            />
             <Controller
               control={control}
               name={BACKUPS_BLOCK_FIELD_NAMES.BACKUP_START_TIME}
