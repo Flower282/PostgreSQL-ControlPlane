@@ -59,6 +59,7 @@ export const convertModalParametersToArray = (value?: string) =>
 export const getCommonExtraVars = (values: ClusterFormValues) => ({
   postgresql_version: values[CLUSTER_FORM_FIELD_NAMES.POSTGRES_VERSION],
   patroni_cluster_name: values[CLUSTER_FORM_FIELD_NAMES.CLUSTER_NAME],
+  high_availability: Boolean(values[DATABASE_SERVERS_FIELD_NAMES.IS_HIGH_AVAILABILITY]),
 });
 
 /**
