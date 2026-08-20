@@ -1,4 +1,5 @@
 import { AUTHENTICATION_METHODS, IS_EXPERT_MODE } from '@shared/model/constants.ts';
+import { PROVIDERS } from '@shared/config/constants.ts';
 import { BACKUP_METHODS, BACKUPS_BLOCK_FIELD_NAMES } from '@entities/cluster/expert-mode/backups-block/model/const.ts';
 import { ADDITIONAL_SETTINGS_BLOCK_FIELD_NAMES } from '@entities/cluster/expert-mode/additional-settings-block/model/const.ts';
 import { POSTGRES_PARAMETERS_FIELD_NAMES } from '@entities/cluster/expert-mode/postgres-parameters-block/model/const.ts';
@@ -111,6 +112,7 @@ export const LOCAL_CLUSTER_DEFAULT_VALUES = Object.freeze(getLocalClusterDefault
 export const getClusterFormDefaultValues = () => ({
   ...getCloudClusterDefaultValues(),
   ...getLocalClusterDefaultValues(),
+  [CLUSTER_FORM_FIELD_NAMES.PROVIDER]: { code: PROVIDERS.LOCAL },
   [CLUSTER_FORM_FIELD_NAMES.DESCRIPTION]: '',
   [CLUSTER_FORM_FIELD_NAMES.CREATION_TYPE]: CLUSTER_CREATION_TYPES.FORM,
   [CLUSTER_FORM_FIELD_NAMES.IS_USE_DEFINED_SECRET]: false,

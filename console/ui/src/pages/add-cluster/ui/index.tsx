@@ -12,13 +12,12 @@ import {
   getClusterFormDefaultValues,
 } from '@widgets/cluster-form/model/constants.ts';
 import { useTranslation } from 'react-i18next';
-import { useGetExternalDeploymentsQuery } from '@shared/api/api/deployments.ts';
 import { useGetEnvironmentsQuery } from '@shared/api/api/environments.ts';
 import { useGetPostgresVersionsQuery } from '@shared/api/api/other.ts';
 import { useGetClustersDefaultNameQuery } from '@shared/api/api/clusters.ts';
 import Spinner from '@shared/ui/spinner';
-import { STORAGE_BLOCK_FIELDS } from '@entities/cluster/storage-block/model/const.ts';
 import { IS_EXPERT_MODE, IS_YAML_ENABLED } from '@shared/model/constants.ts';
+import { PROVIDERS } from '@shared/config/constants.ts';
 import YamlEditorForm from '@widgets/yaml-editor-form/ui';
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 
@@ -32,7 +31,6 @@ const AddCluster: FC = () => {
     defaultValues: getClusterFormDefaultValues(),
   });
 
-  const deployments = useGetExternalDeploymentsQuery({ offset: 0, limit: 999_999_999 });
   const environments = useGetEnvironmentsQuery({ offset: 0, limit: 999_999_999 });
   const postgresVersions = useGetPostgresVersionsQuery();
   const clusterName = useGetClustersDefaultNameQuery();
@@ -42,34 +40,21 @@ const AddCluster: FC = () => {
   useEffect(() => {
     if (
       !isInitialized &&
-      deployments.data?.data &&
       postgresVersions.data?.data &&
       environments.data?.data &&
       clusterName.data
     ) {
-      const providers = deployments.data.data;
       methods.reset({
         ...getClusterFormDefaultValues(),
-        [CLUSTER_FORM_FIELD_NAMES.PROVIDER]: providers[0],
-        [CLUSTER_FORM_FIELD_NAMES.REGION]: providers[0]?.cloud_regions?.[0]?.code,
-        [CLUSTER_FORM_FIELD_NAMES.REGION_CONFIG]: providers[0]?.cloud_regions?.[0]?.datacenters?.[0],
-        [CLUSTER_FORM_FIELD_NAMES.INSTANCE_CONFIG]: providers[0]?.instance_types?.small?.[0],
+        [CLUSTER_FORM_FIELD_NAMES.PROVIDER]: { code: PROVIDERS.LOCAL },
         [CLUSTER_FORM_FIELD_NAMES.POSTGRES_VERSION]: postgresVersions.data.data.at(-1)?.major_version,
         [CLUSTER_FORM_FIELD_NAMES.ENVIRONMENT_ID]: environments.data.data[0]?.id,
         [CLUSTER_FORM_FIELD_NAMES.CLUSTER_NAME]: clusterName.data.name ?? 'postgres-cluster',
-        ...(IS_EXPERT_MODE
-          ? {
-              [STORAGE_BLOCK_FIELDS.VOLUME_TYPE]:
-                providers[0]?.volumes?.find((volume) => volume?.is_default)?.volume_type ??
-                providers[0]?.volumes?.[0]?.volume_type,
-            }
-          : {}),
       });
       setIsInitialized(true);
     }
   }, [
     isInitialized,
-    deployments.data?.data,
     postgresVersions.data?.data,
     environments.data?.data,
     clusterName.data,
@@ -82,7 +67,6 @@ const AddCluster: FC = () => {
     <Stack direction="row">
       <Box width="100%" maxWidth="1000px">
         <ClusterForm
-          deploymentsData={deployments.data?.data ?? []}
           environmentsData={environments.data?.data ?? []}
           postgresVersionsData={postgresVersions.data?.data ?? []}
         />

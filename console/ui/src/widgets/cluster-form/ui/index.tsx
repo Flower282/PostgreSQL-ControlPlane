@@ -1,5 +1,4 @@
 import React, { lazy, useRef } from 'react';
-import ClusterFormProvidersBlock from '@entities/cluster/providers-block';
 import ClusterFormEnvironmentBlock from '@entities/cluster/environment-block';
 import ClusterNameBox from '@entities/cluster/cluster-name-block';
 import ClusterDescriptionBlock from '@entities/cluster/description-block';
@@ -131,7 +130,6 @@ const ClusterForm: React.FC<ClusterFormProps> = ({
             : methods.handleSubmit(onSubmit)
         }>
         <Stack direction="column" gap={2}>
-          <ClusterFormProvidersBlock providers={deploymentsData} />
           {watchProvider?.code === PROVIDERS.LOCAL ? (
             <ClusterFormLocalMachineFormPart />
           ) : (
