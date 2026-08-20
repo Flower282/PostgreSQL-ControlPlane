@@ -169,99 +169,6 @@ patroni_etcd_hosts: [] # list of servers of an existing etcd cluster
 #  - { host: "10.128.64.142", port: "2379" }
 #  - { host: "10.128.64.143", port: "2379" }
 
-# if dcs_type: "consul"
-consul_version: "latest" # or a specific version (e.q., '1.22.1')
-consul_install_from_repo: true # install from hashicorp repository, or 'false' to install from binary
-consul_config_path: "/etc/consul"
-consul_configd_path: "{{ consul_config_path }}/conf.d"
-consul_data_path: "/var/lib/consul"
-consul_domain: "consul" # Consul domain name
-consul_datacenter: "{{ server_location | default('dc1') }}" # Datacenter label (can be specified for each host in the inventory)
-consul_disable_update_check: true # Disables automatic checking for security bulletins and new version releases
-consul_enable_script_checks: true # This controls whether health checks that execute scripts are enabled on this agent
-consul_enable_local_script_checks: true # Enable them when they are defined in the local configuration files
-consul_ui: false # Enable the consul UI?
-consul_syslog_enable: true # Enable logging to syslog
-consul_client_address: "127.0.0.1" # Client address. Affects DNS, HTTP, HTTPS, and gRPC client interfaces.
-consul_bootstrap_expect: "{{ true if consul_node_role == 'server' else false }}"
-consul_on_dedicated_nodes: "{{ groups['consul_instances'] | difference(groups['postgres_cluster']) | length > 0 }}" # 'true' or 'false'
-# TLS
-# Enables TLS encryption with a self-signed certificate if 'tls_cert_generate' is true.
-# If 'tls_cert_generate' is false, you must provide your own CA certificate, server certificate, and server key in the 'files/' directory.
-consul_tls_enable: "{{ tls_cert_generate | default(true) }}"
-consul_tls_dir: "{{ consul_config_path }}/tls"
-consul_tls_ca_crt: "ca.crt"
-consul_tls_ca_key: "ca.key"
-consul_tls_server_crt: "server.crt"
-consul_tls_server_key: "server.key"
-# DNS
-consul_recursors: [] # List of upstream DNS servers
-consul_dnsmasq_enable: true # Enable DNS forwarding with Dnsmasq
-consul_dnsmasq_cache: 0 # dnsmasq cache-size (0 - disable caching)
-consul_dnsmasq_servers: "{{ nameservers }}" # Upstream DNS servers used by dnsmasq
-
-# if dcs_type: "consul" and dcs_exists: true
-consul_join: [] # List of LAN servers of an existing consul cluster, to join.
-# - "10.128.64.140"
-# - "10.128.64.142"
-# - "10.128.64.143"
-
-# https://developer.hashicorp.com/consul/docs/discovery/services
-consul_services:
-  - name: "{{ patroni_cluster_name }}"
-    id: "{{ patroni_cluster_name }}-master"
-    tags: ["master", "primary"]
-    port: "{{ pgbouncer_listen_port }}" # or "{{ postgresql_port }}" if pgbouncer_install: false
-    checks:
-      - http: >-
-          {{ patroni_restapi_protocol }}://{{ patroni_restapi_connect_addr
-          | default(patroni_bind_address
-          | default(bind_address, true), true) }}:{{ patroni_restapi_port }}/primary
-        tls_skip_verify: true
-        interval: "2s"
-      # comment out this check if pgbouncer_install: false
-      - args: ["systemctl", "status", "pgbouncer"]
-        interval: "5s"
-  - name: "{{ patroni_cluster_name }}"
-    id: "{{ patroni_cluster_name }}-replica"
-    tags: ["replica"]
-    port: "{{ pgbouncer_listen_port }}"
-    checks:
-      - http: >-
-          {{ patroni_restapi_protocol }}://{{ patroni_restapi_connect_addr
-          | default(patroni_bind_address
-          | default(bind_address, true), true) }}:{{ patroni_restapi_port }}/replica?lag={{ patroni_maximum_lag_on_replica }}
-        tls_skip_verify: true
-        interval: "2s"
-      - args: ["systemctl", "status", "pgbouncer"]
-        interval: "5s"
-#  - name: "{{ patroni_cluster_name }}"
-#    id: "{{ patroni_cluster_name }}-sync-replica"
-#    tags: ['sync-replica']
-#    port: "{{ pgbouncer_listen_port }}"
-#    checks:
-#      - http: >-
-#          {{ patroni_restapi_protocol }}://{{ patroni_restapi_connect_addr
-#          | default(patroni_bind_address
-#          | default(bind_address, true), true) }}:{{ patroni_restapi_port }}/sync
-#        tls_skip_verify: true
-#        interval: "2s"
-#      - args: ["systemctl", "status", "pgbouncer"]
-#        interval: "5s"
-#  - name: "{{ patroni_cluster_name }}"
-#    id: "{{ patroni_cluster_name }}-async-replica"
-#    tags: ['async-replica']
-#    port: "{{ pgbouncer_listen_port }}"
-#    checks:
-#      - http: >-
-#          {{ patroni_restapi_protocol }}://{{ patroni_restapi_connect_addr
-#          | default(patroni_bind_address
-#          | default(bind_address, true), true) }}:{{ patroni_restapi_port }}/async?lag={{ patroni_maximum_lag_on_replica }}
-#        tls_skip_verify: true
-#        interval: "2s"
-#      - args: ["systemctl", "status", "pgbouncer"]
-#        interval: "5s"
-
 ############################################################
 # PostgreSQL parameters
 ############################################################
@@ -671,25 +578,12 @@ patroni_cluster_bootstrap_method: "initdb" # or "wal-g", "pgbackrest", "pg_proba
 
 # https://patroni.readthedocs.io/en/latest/replica_bootstrap.html#building-replicas
 patroni_create_replica_methods:
-  #  - pgbackrest
-  #  - wal_g
-  #  - pg_probackup
-  - basebackup
+  - pgbackrest
 
 pgbackrest:
   - { option: "command", value: "{{ pgbackrest_patroni_cluster_restore_command }}" }
   - { option: "keep_data", value: "True" }
   - { option: "no_params", value: "True" }
-wal_g:
-  - { option: "command", value: "{{ wal_g_patroni_cluster_bootstrap_command }}" }
-  - { option: "no_params", value: "True" }
-basebackup:
-  - { option: "max-rate", value: "1000M" }
-  - { option: "checkpoint", value: "fast" }
-#  - { option: "waldir", value: "{{ postgresql_wal_dir }}" }
-pg_probackup:
-  - { option: "command", value: "{{ pg_probackup_restore_command }}" }
-  - { option: "no_params", value: "true" }
 
 # "restore_command" written to recovery.conf when configuring follower (create replica)
 postgresql_restore_command: ""
@@ -705,89 +599,6 @@ postgresql_archive_command: >-
   {{ pgbackrest_archive_command if pgbackrest_install | bool
      else wal_g_archive_command if wal_g_install | bool
      else '/bin/true' }}
-
-# pg_probackup
-pg_probackup_install: false
-pg_probackup_install_from_postgrespro_repo: true
-pg_probackup_version: "{{ postgresql_version }}"
-pg_probackup_instance: "pg_probackup_instance_name"
-pg_probackup_dir: "/mnt/backup_dir"
-pg_probackup_threads: "4"
-pg_probackup_add_keys: "--recovery-target=latest --skip-external-dirs --no-validate"
-# Ensure there is a space at the beginning of each part to prevent commands from concatenating.
-pg_probackup_command_parts:
-  - "pg_probackup-{{ pg_probackup_version }}"
-  - " restore -B {{ pg_probackup_dir }}"
-  - " --instance {{ pg_probackup_instance }}"
-  - " -j {{ pg_probackup_threads }}"
-  - " {{ pg_probackup_add_keys }}"
-pg_probackup_restore_command: "{{ pg_probackup_command_parts | join('') }}"
-pg_probackup_patroni_cluster_bootstrap_command: "{{ pg_probackup_command_parts | join('') }}"
-
-# WAL-G
-wal_g_install: false
-# renovate: datasource=github-releases depName=wal-g/wal-g extractVersion=^v(?<version>.*)$
-wal_g_version: 3.0.8
-wal_g_installation_method: "binary" # or "src" to build from source code
-wal_g_path: "/usr/local/bin/wal-g --config {{ postgresql_home_dir }}/.walg.json"
-wal_g_json: # config https://github.com/wal-g/wal-g#configuration
-  - { option: "AWS_ACCESS_KEY_ID", value: "{{ wal_g_aws_access_key_id | default('') }}" } # define values or pass via --extra-vars
-  - { option: "AWS_SECRET_ACCESS_KEY", value: "{{ wal_g_aws_secret_access_key | default('') }}" } # define values or pass via --extra-vars
-  - { option: "WALG_S3_PREFIX", value: "{{ wal_g_s3_prefix | default('s3://' + patroni_cluster_name) }}" } # define values or pass via --extra-vars
-  - { option: "WALG_COMPRESSION_METHOD", value: "{{ wal_g_compression_method | default('brotli') }}" } # or "lz4", "lzma", "zstd"
-  - { option: "WALG_DELTA_MAX_STEPS", value: "{{ wal_g_delta_max_steps | default('6') }}" } # determines how many delta backups can be between full backups
-  - { option: "WALG_PREFETCH_DIR", value: "{{ wal_g_prefetch_dir_path }}" } # prevent pg_rewind failures by setting non-default prefetch directory
-  - { option: "PGDATA", value: "{{ postgresql_data_dir }}" }
-  - { option: "PGHOST", value: "{{ postgresql_unix_socket_dir }}" }
-  - { option: "PGPORT", value: "{{ postgresql_port }}" }
-  - { option: "PGUSER", value: "{{ patroni_superuser_username }}" }
-#  - { option: "AWS_S3_FORCE_PATH_STYLE", value: "true" }  # to use Minio.io S3-compatible storage
-#  - { option: "AWS_ENDPOINT", value: "http://minio:9000" }  # to use Minio.io S3-compatible storage
-#  - { option: "", value: "" }
-wal_g_archive_command: "{{ wal_g_path }} wal-push %p"
-wal_g_patroni_cluster_bootstrap_command: "{{ wal_g_path }} backup-fetch {{ postgresql_data_dir }} LATEST"
-wal_g_patroni_cluster_bootstrap_recovery_conf:
-  - restore_command: "{{ wal_g_path }} wal-fetch %f %p"
-  - recovery_target_action: "promote"
-  - recovery_target_timeline: "latest"
-#  - recovery_target_time: "2020-06-01 11:00:00+03"  # Point-in-Time Recovery (example)
-wal_g_prefetch_dir_create: true
-wal_g_prefetch_dir_path: "{{ postgresql_home_dir }}/wal-g-prefetch"
-
-# Define job_parts outside of wal_g_cron_jobs
-# Ensure there is a space at the beginning of each part to prevent commands from concatenating.
-wal_g_backup_command:
-  - "curl -I -s --cacert '{{ patroni_restapi_cafile }}'"
-  - " {{ patroni_restapi_protocol }}://{{ patroni_restapi_connect_addr | default(patroni_bind_address | default(bind_address, true), true) }}"
-  - ":{{ patroni_restapi_port }}"
-  - " | grep 200"
-  - " && {{ wal_g_path }} backup-push {{ postgresql_data_dir }} > {{ postgresql_log_dir }}/walg_backup.log 2>&1"
-wal_g_delete_command:
-  - "curl -I -s --cacert '{{ patroni_restapi_cafile }}'"
-  - " {{ patroni_restapi_protocol }}://{{ patroni_restapi_connect_addr | default(patroni_bind_address | default(bind_address, true), true) }}"
-  - ":{{ patroni_restapi_port }}"
-  - " | grep 200"
-  - " && {{ wal_g_path }} delete retain FULL {{ wal_g_retention_full | default (4) }} --confirm > {{ postgresql_log_dir }}/walg_delete.log 2>&1"
-
-wal_g_cron_jobs:
-  - name: "WAL-G: Create daily backup"
-    user: "postgres"
-    file: /etc/cron.d/walg
-    minute: "00"
-    hour: "{{ wal_g_backup_hour | default('3') }}"
-    day: "*"
-    month: "*"
-    weekday: "*"
-    job: "{{ wal_g_backup_command | join('') }}"
-  - name: "WAL-G: Delete old backups"
-    user: "postgres"
-    file: /etc/cron.d/walg
-    minute: "30"
-    hour: "6"
-    day: "*"
-    month: "*"
-    weekday: "*"
-    job: "{{ wal_g_delete_command | join('') }}"
 
 # pgBackRest
 pgbackrest_install: false # or 'true' to install and configure backups using pgBackRest
@@ -901,33 +712,6 @@ cluster_restore_timeout: 86400 # backup and WAL restore timeout in seconds (24 h
 
 disable_archive_command: true # or 'false' to not disable archive_command after restore
 keep_patroni_dynamic_json: true # or 'false' to remove patroni.dynamic.json after restore (if exists)
-
-############################################################
-# Monitoring
-############################################################
-
-# Netdata - https://github.com/netdata/netdata
-# Open up your web browser of choice and navigate to http://NODE:19999
-netdata_install: true # Install Netdata on Postgres cluster nodes (with kickstart.sh)
-netdata_install_options: "--stable-channel --disable-telemetry --dont-wait"
-netdata_conf:
-  web_default_port: "19999" # the listen port for the Netdata Web Server.
-  web_bind_to: "*"
-  db_mode: "dbengine" # dbengine, ram, none
-  dbengine_page_cache_size: "64MiB" # controls the size of the cache that keeps metric data on memory.
-  # Tier 0, per second data:
-  dbengine_tier_0_retention_size: "1024MiB"
-  dbengine_tier_0_retention_time: "14d"
-  # Tier 1, per minute data:
-  dbengine_tier_1_retention_size: "1024MiB"
-  dbengine_tier_1_retention_time: "3mo"
-  # Tier 2, per hour data:
-  dbengine_tier_2_retention_size: "1024MiB"
-  dbengine_tier_2_retention_time: "1y"
-  # With these defaults, Netdata requires approximately 4 GiB of storage space (including metadata).
-  # You can fine-tune retention for each tier by setting a time limit or size limit. Setting a limit to 0 disables it.
-# More options you can specify in the roles/netdata/templates/netdata.conf.j2
-# https://learn.netdata.cloud/docs/netdata-agent/configuration
 
 ############################################################
 # System parameters
@@ -1183,14 +967,6 @@ apt_repository:
 #  - repo: "deb https://deb.debian.org/debian/ {{ ansible_distribution_release }}-updates main"
 #  - repo: "deb https://security.debian.org/debian-security/ {{ ansible_distribution_release }}/updates main"
 
-# RedHat
-yum_repository: []
-#  - name: "repo name"
-#    description: "repo description"
-#    baseurl: "https://<my_repo>"
-#    gpgkey: "https://my-repo-key.url"
-#    gpgcheck: "yes"
-
 install_postgresql_repo: true # or 'false' (installed from the package "pgdg-redhat-repo-latest.noarch.rpm")
 install_postgresql_repo_extras: true # enable PostgreSQL extras repository (e.g., pgdg-rhel8-extras)
 install_epel_repo: true # or 'false' (installed from the package "epel-release-latest.noarch.rpm")
@@ -1223,28 +999,11 @@ postgresql_os_specific_packages:
 #   - postgresql-{{ postgresql_version }}-pgvector
 #   - postgresql-{{ postgresql_version }}-pgaudit
 #   - postgresql-{{ postgresql_version }}-partman
-  RedHat:
-    - postgresql{{ postgresql_version }}{{ postgresql_package_version_full }}
-    - postgresql{{ postgresql_version }}-server{{ postgresql_package_version_full }}
-    - postgresql{{ postgresql_version }}-contrib{{ postgresql_package_version_full }}
-    - postgresql{{ postgresql_version }}-devel{{ postgresql_package_version_full }}
-#   - postgresql{{ postgresql_version }}-debuginfo{{ postgresql_package_version_full }}
-#   - pg_repack_{{ postgresql_version }}
-#   - pg_cron_{{ postgresql_version }}
-#   - pg_stat_kcache_{{ postgresql_version }}
-#   - pg_wait_sampling_{{ postgresql_version }}
-#   - postgis36_{{ postgresql_version }}
-#   - pgrouting_{{ postgresql_version }}
-#   - pgvector_{{ postgresql_version }}
-#   - pgaudit17_{{ postgresql_version }}
-#   - pg_partman_{{ postgresql_version }}
 postgresql_packages: "{{ postgresql_os_specific_packages[ansible_os_family] }}"
 
 patroni_os_specific_packages:
   Debian:
     - python3-{{ dcs_type }}
-  RedHat:
-    - patroni-{{ dcs_type }}
 patroni_packages:
   - patroni
   - "{{ patroni_os_specific_packages[ansible_os_family] }}"
@@ -1255,8 +1014,6 @@ etcd_os_specific_packages:
   Debian:
     - etcd-client
     - etcd-server
-  RedHat:
-    - etcd
 etcd_packages:
   - "{{ etcd_os_specific_packages[ansible_os_family] }}"
 
@@ -1268,13 +1025,6 @@ system_os_specific_packages:
     - curl
     - locales
     - locales-all
-  RedHat:
-    - python{{ python_version }}-devel
-    - python{{ python_version }}-libselinux
-    - python{{ python_version }}-libsemanage
-    - python{{ python_version }}-policycoreutils
-    - dnf-utils
-    - bind-utils
 system_packages:
   - "{{ system_os_specific_packages[ansible_os_family] }}"
   - python{{ python_version }}
@@ -1375,19 +1125,9 @@ post_deploy_command_log: "/var/tmp/post_deploy_command.log"
 
 # Supported Linux versions
 os_valid_distributions:
-  - RedHat
-  - CentOS
-  - Rocky
-  - OracleLinux
   - Ubuntu
   - Debian
-  - AlmaLinux
 
 os_minimum_versions:
-  RedHat: 8
-  CentOS: 8
-  Rocky: 8.4
-  AlmaLinux: 8.3
-  OracleLinux: 8
   Ubuntu: 22.04
   Debian: 11

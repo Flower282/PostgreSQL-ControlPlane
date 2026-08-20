@@ -1,20 +1,7 @@
 ---
-- name:   Deploy PostgreSQL Cluster
-  hosts: localhost
-  gather_facts: true
-  any_errors_fatal: true
-  pre_tasks:
-    - name: "Set variable: 'pgbackrest_install' to configure Postgres backups"
-      ansible.builtin.set_fact:
-        pgbackrest_install: true
-      tags: always
-  roles:
-    - role: vitabaks.autobase.cloud_resources
-      when: cloud_provider | default('') | length > 0
-      tags: always
 
 - name:   Perform pre-checks and preparation
-  hosts: "etcd_cluster:consul_instances:balancers:postgres_cluster"
+  hosts: "etcd_cluster:balancers:postgres_cluster"
   become: true
   become_method: sudo
   gather_facts: true
@@ -55,12 +42,6 @@
           product_name: "{{ ansible_product_name | default('N/A') }}"
       tags: always
 
-    # if 'cloud_provider' is 'aws', 'gcp', or 'azure'
-    # set_fact: 'pgbackrest_install' to configure Postgres backups if not disabled explicitly.
-    - name: "Set variable: 'pgbackrest_install' to configure Postgres backups"
-      ansible.builtin.set_fact:
-        pgbackrest_install: true
-
     - name: Update apt cache
       ansible.builtin.apt:
         update_cache: true
@@ -69,7 +50,6 @@
       until: apt_status is success
       delay: 5
       retries: 3
-      when: ansible_os_family == "Debian"
 
     - name: Make sure the gnupg and apt-transport-https packages are present
       ansible.builtin.apt:
@@ -82,7 +62,6 @@
       delay: 5
       retries: 3
       when:
-        - ansible_os_family == "Debian"
         - "'gnupg' not in ansible_facts.packages or 'apt-transport-https' not in ansible_facts.packages"
 
     # (optional) Command or script to be executed before the Postgres cluster deployment.
@@ -152,7 +131,6 @@
     - role: vitabaks.autobase.pre_checks
       vars:
         minimal_ansible_version: 2.17.0
-        timescale_minimal_pg_version: 12 # if enable_timescale is defined
       tags: always
 
     - role: vitabaks.autobase.hostname
