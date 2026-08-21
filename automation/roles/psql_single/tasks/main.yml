@@ -1,0 +1,29 @@
+---
+- name: Create PostgreSQL data directory
+  ansible.builtin.file:
+    path: "{{ postgresql_data_dir }}"
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: "0700"
+
+- name: Check if PostgreSQL cluster is already initialized
+  ansible.builtin.stat:
+    path: "{{ postgresql_data_dir }}/PG_VERSION"
+  register: postgresql_cluster_initialized
+
+- name: Initialize PostgreSQL cluster
+  ansible.builtin.command:
+    cmd: >
+      pg_createcluster
+      {{ postgresql_version }}
+      {{ postgresql_cluster_name }}
+      --datadir={{ postgresql_data_dir }}
+      --port={{ postgresql_port }}
+  when: not postgresql_cluster_initialized.stat.exists
+
+- name: Enable and start PostgreSQL cluster service
+  ansible.builtin.systemd:
+    name: "postgresql@{{ postgresql_version }}-{{ postgresql_cluster_name }}"
+    enabled: true
+    state: started

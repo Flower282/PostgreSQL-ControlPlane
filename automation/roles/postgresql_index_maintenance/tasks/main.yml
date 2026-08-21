@@ -40,7 +40,7 @@
 
 - name: Configure pg_auto_reindexer cron jobs
   ansible.builtin.include_role:
-    name: vitabaks.autobase.cron
+    name: cron
     apply:
       tags: pg_auto_reindexer, pg_auto_reindexer_cron
   vars:

@@ -1,5 +1,5 @@
 ---
-- name: vitabaks.autobase.balancers | Configure HAProxy load balancers
+- name: balancers | Configure HAProxy load balancers
   hosts: balancers
   become: true
   become_method: sudo
@@ -18,7 +18,7 @@
 
     - name: Define bind_address
       ansible.builtin.include_role:
-        name: vitabaks.autobase.bind_address
+        name: bind_address
       when: bind_address is not defined
       tags: always
 
@@ -64,7 +64,7 @@
       tags: firewall
 
   roles:
-    - role: vitabaks.autobase.firewall
+    - role: firewall
       environment: "{{ proxy_env | default({}) }}"
       vars:
         firewall_allowed_tcp_ports: "{{ firewall_ports_dynamic_var | default([]) | unique }}"
@@ -72,26 +72,26 @@
       when: firewall_enabled_at_boot | default(false) | bool
       tags: firewall
 
-    - role: vitabaks.autobase.hostname
-    - role: vitabaks.autobase.resolv_conf
-    - role: vitabaks.autobase.sysctl
+    - role: hostname
+    - role: resolv_conf
+    - role: sysctl
 
-    - role: vitabaks.autobase.haproxy
+    - role: haproxy
       when: with_haproxy_load_balancing | default(false) | bool
 
-    - role: vitabaks.autobase.confd
+    - role: confd
       when:
         - with_haproxy_load_balancing | default(false) | bool
         - confd_install | default(true) | bool
         - dcs_type | default('etcd') == "etcd"
 
-    - role: vitabaks.autobase.keepalived
+    - role: keepalived
       when: cluster_vip is defined and cluster_vip | length > 0
 
   # Optional
   tasks:
     - name: Disable vip_manager
       ansible.builtin.include_role:
-        name: vitabaks.autobase.vip_manager
+        name: vip_manager
         tasks_from: disable
       when: vip_manager_disable | default(false) | bool

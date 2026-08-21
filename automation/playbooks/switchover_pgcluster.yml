@@ -14,12 +14,12 @@
 
     - name: Define bind_address
       ansible.builtin.import_role:
-        name: vitabaks.autobase.bind_address
+        name: bind_address
       when: bind_address is not defined
 
     - name: Set default variables
       ansible.builtin.import_role:
-        name: vitabaks.autobase.common
+        name: common
 
     - name: "[Prepare] Get Patroni Cluster Leader Node"
       ansible.builtin.uri:
@@ -100,7 +100,7 @@
 
     - name: Get current Patroni passwords
       ansible.builtin.import_role:
-        name: vitabaks.autobase.pre_checks
+        name: pre_checks
         tasks_from: passwords
       vars:
         source_group: primary
@@ -129,6 +129,6 @@
 
     - name: Switchover Patroni leader role
       ansible.builtin.import_role:
-        name: vitabaks.autobase.patroni
+        name: patroni
         tasks_from: switchover
       when: groups.get('secondary', []) | length > 0

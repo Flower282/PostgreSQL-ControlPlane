@@ -132,18 +132,6 @@
       retries: 3
       when: ansible_os_family == "Debian" and patroni_deb_package_repo | length < 1
 
-    # RedHat
-    - name: Install patroni package
-      ansible.builtin.dnf:
-        name: "{{ patroni_packages | flatten }}"
-        state: present
-        disable_gpg_check: true
-      register: dnf_status
-      until: dnf_status is success
-      delay: 5
-      retries: 3
-      when: ansible_os_family == "RedHat" and patroni_rpm_package_repo | length < 1
-
     # when patroni_deb_package_repo or patroni_rpm_package_repo URL is defined
     # Debian
     - name: Download patroni deb package
@@ -166,28 +154,6 @@
       delay: 5
       retries: 3
       when: ansible_os_family == "Debian" and patroni_deb_package_repo | length > 0
-
-    # RedHat
-    - name: Download patroni rpm package
-      ansible.builtin.get_url:
-        url: "{{ item }}"
-        dest: /tmp/
-        timeout: 60
-        validate_certs: false
-      loop: "{{ patroni_rpm_package_repo | list }}"
-      when: ansible_os_family == "RedHat" and patroni_rpm_package_repo | length > 0
-
-    - name: Install patroni from rpm package
-      ansible.builtin.dnf:
-        name: "/tmp/{{ item }}"
-        state: present
-        disable_gpg_check: true
-      loop: "{{ patroni_rpm_package_repo | map('basename') | list }}"
-      register: rpm_package_status
-      until: rpm_package_status is success
-      delay: 5
-      retries: 3
-      when: ansible_os_family == "RedHat" and patroni_rpm_package_repo | length > 0
   environment: "{{ proxy_env | default({}) }}"
   when: installation_method == "packages" and (patroni_installation_method == "rpm" or patroni_installation_method == "deb")
   tags: patroni, patroni_install
@@ -876,23 +842,6 @@
         delay: 10
       ignore_errors: false
 
-      # for WAL-G (custom bootstrap)
-    - name: Wait for PostgreSQL Recovery to complete (WAL apply)
-      become: true
-      become_user: postgres
-      ansible.builtin.command: >-
-        {{ postgresql_bin_dir }}/psql -h 127.0.0.1 -p {{ postgresql_port }} -U {{ patroni_superuser_username }} -d postgres -tAXc
-        "select pg_is_in_recovery()"
-      environment:
-        PGPASSWORD: "{{ patroni_superuser_password }}"
-      register: pg_is_in_recovery
-      until: pg_is_in_recovery.stdout == "f"
-      retries: "{{ (cluster_restore_timeout | default(86400)) | int // 30 }}" # timeout 24 hours
-      delay: 30
-      changed_when: false
-      failed_when: false
-      when: patroni_cluster_bootstrap_method == "wal-g"
-
     - name: Wait for the standby cluster initialization to complete
       ansible.builtin.uri:
         url: "{{ patroni_restapi_protocol }}://{{ patroni_restapi_connect_addr | default(patroni_bind_address | default(bind_address, true), true) }}:\
@@ -1129,25 +1078,6 @@
         daemon_reload: true
   when: ansible_os_family == "Debian" and
     postgresql_packages|join(" ") is not search("postgrespro")
-  tags: patroni, postgresql_disable
-
-# "RedHat"
-- name: Disable "postgresql-{{ postgresql_version | default('') }}" service (will be managed by patroni)
-  ansible.builtin.systemd:
-    name: "postgresql-{{ postgresql_version }}"
-    enabled: false
-    daemon_reload: true
-  when: ansible_os_family == "RedHat" and
-    postgresql_packages|join(" ") is not search("postgrespro")
-  tags: patroni, postgresql_disable
-
-# PostgresPro
-- name: Disable "postgrespro-std-{{ postgresql_version | default('') }}" service (will be managed by patroni)
-  ansible.builtin.systemd:
-    name: "postgrespro-std-{{ postgresql_version }}"
-    enabled: false
-    daemon_reload: true
-  when: postgresql_packages|join(" ") is search("postgrespro-std")
   tags: patroni, postgresql_disable
 
 # PATRONICTL_CONFIG_FILE (patroni v1.6.1 and higher)

@@ -1,5 +1,5 @@
 ---
-- name: vitabaks.autobase.stop_pgnode | Stop PostgreSQL Cluster node
+- name: stop_pgnode | Stop PostgreSQL Cluster node
   hosts: postgres_cluster
   gather_facts: true
   become: true
@@ -14,12 +14,12 @@
 
     - name: Define bind_address
       ansible.builtin.import_role:
-        name: vitabaks.autobase.bind_address
+        name: bind_address
       when: bind_address is not defined
 
     - name: Set default variables
       ansible.builtin.import_role:
-        name: vitabaks.autobase.common
+        name: common
 
     - name: Require Patroni stop node name
       ansible.builtin.assert:
@@ -111,7 +111,7 @@
 
     - name: Get current Patroni passwords
       ansible.builtin.import_role:
-        name: vitabaks.autobase.pre_checks
+        name: pre_checks
         tasks_from: passwords
       vars:
         source_group: primary
@@ -120,6 +120,6 @@
 
     - name: Stop services on the selected node
       ansible.builtin.import_role:
-        name: vitabaks.autobase.update
+        name: update
         tasks_from: stop_services
       when: ansible_hostname == patroni_stop_node_name | default('')

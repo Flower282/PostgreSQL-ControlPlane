@@ -40,7 +40,7 @@
 # TLS (etcd)
 - name: Copy etcd cert files for confd
   ansible.builtin.include_role:
-    name: vitabaks.autobase.tls_certificate
+    name: tls_certificate
     tasks_from: copy
   vars:
     tls_group_name: "etcd_cluster"

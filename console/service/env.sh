@@ -1,5 +1,5 @@
 export PG_CONSOLE_DB_MIGRATIONDIR='/home/duonglt/autobase/console/db/migrations'
-export PG_CONSOLE_LOGGER_LEVEL=TRACE
+export PG_CONSOLE_LOGGER_LEVEL=INFO
 export PG_CONSOLE_AUTHORIZATION_TOKEN='123456'
 # Cloud PostgreSQL connection settings
 export PG_CONSOLE_DB_HOST='localhost'

@@ -1,5 +1,5 @@
 ---
-- name: vitabaks.autobase.restart_pgnode | Restart PostgreSQL Cluster node
+- name: restart_pgnode | Restart PostgreSQL Cluster node
   hosts: postgres_cluster
   gather_facts: true
   become: true
@@ -14,12 +14,12 @@
 
     - name: Define bind_address
       ansible.builtin.import_role:
-        name: vitabaks.autobase.bind_address
+        name: bind_address
       when: bind_address is not defined
 
     - name: Set default variables
       ansible.builtin.import_role:
-        name: vitabaks.autobase.common
+        name: common
 
     - name: Require Patroni restart node name
       ansible.builtin.assert:
@@ -120,7 +120,7 @@
 
     - name: Get current Patroni passwords
       ansible.builtin.import_role:
-        name: vitabaks.autobase.pre_checks
+        name: pre_checks
         tasks_from: passwords
       vars:
         source_group: primary
@@ -129,7 +129,7 @@
 
     - name: Stop read-only traffic on replica
       ansible.builtin.import_role:
-        name: vitabaks.autobase.update
+        name: update
         tasks_from: stop_traffic
       when:
         - ansible_hostname == patroni_restart_node_name | default('')
@@ -137,19 +137,19 @@
 
     - name: Stop services
       ansible.builtin.import_role:
-        name: vitabaks.autobase.update
+        name: update
         tasks_from: stop_services
       when: ansible_hostname == patroni_restart_node_name | default('')
 
     - name: Start services
       ansible.builtin.import_role:
-        name: vitabaks.autobase.update
+        name: update
         tasks_from: start_services
       when: ansible_hostname == patroni_restart_node_name | default('')
 
     - name: Start read-only traffic on replica
       ansible.builtin.import_role:
-        name: vitabaks.autobase.update
+        name: update
         tasks_from: start_traffic
       when:
         - ansible_hostname == patroni_restart_node_name | default('')

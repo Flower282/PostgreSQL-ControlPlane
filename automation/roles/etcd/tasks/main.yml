@@ -81,7 +81,7 @@
 - block:
     - name: Generate etcd TLS certificate
       ansible.builtin.include_role:
-        name: vitabaks.autobase.tls_certificate
+        name: tls_certificate
       vars:
         tls_group_name: "etcd_cluster"
         generate_tls_owner: "etcd"
@@ -91,7 +91,7 @@
 
     - name: Copy etcd TLS certificate, key and CA to all nodes
       ansible.builtin.include_role:
-        name: vitabaks.autobase.tls_certificate
+        name: tls_certificate
         tasks_from: copy
       vars:
         tls_group_name: "etcd_cluster"

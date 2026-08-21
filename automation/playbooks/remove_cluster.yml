@@ -1,5 +1,5 @@
 ---
-- name: vitabaks.autobase.remove_cluster | Remove PostgreSQL Cluster
+- name: remove_cluster | Remove PostgreSQL Cluster
   hosts: postgres_cluster:pgbackrest
   become: true
   gather_facts: true
@@ -86,7 +86,7 @@
         - ('pgbackrest' in groups and groups['pgbackrest'] | length > 0 and inventory_hostname in groups['pgbackrest']) or
           (('pgbackrest' not in groups or groups['pgbackrest'] | length == 0) and inventory_hostname == groups['postgres_cluster'][0])
 
-- name: vitabaks.autobase.remove_cluster | Remove Consul Cluster
+- name: remove_cluster | Remove Consul Cluster
   hosts: consul_instances
   become: true
   tasks:
@@ -107,7 +107,7 @@
       ignore_errors: true
       when: remove_consul | default(false) | bool
 
-- name: vitabaks.autobase.remove_cluster | Remove Etcd Cluster
+- name: remove_cluster | Remove Etcd Cluster
   hosts: etcd_cluster
   become: true
   tasks:

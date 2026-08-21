@@ -1,5 +1,5 @@
 ---
-- name: vitabaks.autobase.reinit_pgcluster | Prepare PostgreSQL Cluster Reinitialization
+- name: reinit_pgcluster | Prepare PostgreSQL Cluster Reinitialization
   hosts: postgres_cluster
   gather_facts: true
   become: true
@@ -21,12 +21,12 @@
 
     - name: Define bind_address
       ansible.builtin.import_role:
-        name: vitabaks.autobase.bind_address
+        name: bind_address
       when: bind_address is not defined
 
     - name: Set default variables
       ansible.builtin.import_role:
-        name: vitabaks.autobase.common
+        name: common
 
     - name: "[Prepare] Get Patroni Cluster Leader Node"
       ansible.builtin.uri:
@@ -105,7 +105,7 @@
         - groups.get('primary', []) | length > 0
         - inventory_hostname in groups['primary']
 
-- name: vitabaks.autobase.reinit_pgcluster | Reinitialize Patroni replica
+- name: reinit_pgcluster | Reinitialize Patroni replica
   hosts: primary
   gather_facts: true
   become: true
@@ -126,7 +126,7 @@
 
     - name: Reinitialize Patroni replica
       ansible.builtin.import_role:
-        name: vitabaks.autobase.patroni
+        name: patroni
         tasks_from: reinit
 
     - name: Inform about asynchronous Patroni reinitialization

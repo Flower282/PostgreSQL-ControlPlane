@@ -48,7 +48,7 @@
 
 - name: Add repositories, if it wasn't done yet
   ansible.builtin.import_role:
-    name: vitabaks.autobase.add_repository
+    name: add_repository
     allow_duplicates: false
   when: pgbackrest_install_from_pgdg_repo | bool
   tags: pgbackrest, pgbackrest_repo, pgbackrest_install
@@ -199,7 +199,7 @@
 
 - name: Add pgbackrest cron jobs on database server
   ansible.builtin.include_role:
-    name: vitabaks.autobase.cron
+    name: cron
   vars:
     cron_jobs: "{{ pgbackrest_cron_jobs }}"
   when:
@@ -210,7 +210,7 @@
 # Dedicated pgbackrest server (if "repo_host" is set)
 - name: Add pgbackrest cron jobs on pgbackrest server
   ansible.builtin.include_role:
-    name: vitabaks.autobase.cron
+    name: cron
   vars:
     cron_jobs: "{{ pgbackrest_cron_jobs }}"
   when:

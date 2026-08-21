@@ -6,21 +6,6 @@
   when: ansible_facts.packages is not defined
   check_mode: false
 
-- name: Install cronie package
-  ansible.builtin.dnf:
-    name: cronie
-    state: present
-  register: package_status
-  until: package_status is success
-  delay: 5
-  retries: 3
-  environment: "{{ proxy_env | default({}) }}"
-  when:
-    - ansible_os_family == "RedHat"
-    - "'cronie' not in ansible_facts.packages"
-    - cron_jobs is defined and cron_jobs | length > 0
-  tags: cron
-
 - name: Install cron package
   ansible.builtin.apt:
     name: cron
@@ -40,23 +25,6 @@
 # The postgres user is created by the postgresql package with a locked password by default.
 # pam_unix.so rejects locked accounts even for cron. Change to unusable password (*) which
 # allows cron execution while still preventing direct password login.
-- block:
-    - name: Check password lock state for postgres user
-      ansible.builtin.command: "getent shadow postgres"
-      register: postgres_shadow
-      changed_when: false
-      no_log: true
-
-    - name: Unlock the locked password for postgres user (for PAM/cron compatibility)
-      ansible.builtin.user:
-        name: postgres
-        password: '*'
-        password_lock: false
-      when: postgres_shadow.stdout is match('^postgres:!+')
-  when:
-    - ansible_os_family == "RedHat"
-    - cron_jobs is defined and cron_jobs | length > 0
-  tags: cron
 
 - name: Add cron jobs
   ansible.builtin.cron:

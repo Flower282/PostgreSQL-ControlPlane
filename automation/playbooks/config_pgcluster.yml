@@ -1,5 +1,5 @@
 ---
-- name: vitabaks.autobase.config_pgcluster | Configure PostgreSQL Cluster
+- name: config_pgcluster | Configure PostgreSQL Cluster
   hosts: postgres_cluster:etcd_cluster
   become: true
   become_method: sudo
@@ -13,12 +13,12 @@
 
     - name: Define bind_address
       ansible.builtin.import_role:
-        name: vitabaks.autobase.bind_address
+        name: bind_address
       tags: always
 
     - name: Set default variables
       ansible.builtin.import_role:
-        name: vitabaks.autobase.common
+        name: common
       tags: always
 
     - name: "[Prepare] Set maintenance variable"
@@ -59,7 +59,7 @@
       tags: always
 
   roles:
-    - role: vitabaks.autobase.pre_checks
+    - role: pre_checks
       vars:
         minimal_ansible_version: 2.17.0
         timescale_minimal_pg_version: 12 # if enable_timescale is defined
@@ -108,7 +108,7 @@
         - pgbackrest_auto_conf | default(true) | bool # to be able to disable auto backup settings
       tags: always
 
-- name: vitabaks.autobase.config_pgcluster | Configure PostgreSQL Cluster
+- name: config_pgcluster | Configure PostgreSQL Cluster
   hosts: "primary:secondary"
   become: true
   become_method: sudo
@@ -119,13 +119,13 @@
     - block: # Regenerate certificate (optional)
         - name: Generate Postgres TLS certificate
           ansible.builtin.include_role:
-            name: vitabaks.autobase.tls_certificate
+            name: tls_certificate
           vars:
             tls_group_name: "postgres_cluster"
 
         - name: Copy Postgres TLS certificate, key and CA to all nodes
           ansible.builtin.include_role:
-            name: vitabaks.autobase.tls_certificate
+            name: tls_certificate
             tasks_from: copy
       when:
         - tls_cert_generate | default(true) | bool
@@ -152,65 +152,65 @@
       when: dcs_type | default('etcd') == "consul" and consul_dnsmasq_enable | default(true) | bool and ('127.0.0.1' not in (nameservers | default([])))
 
   roles:
-    - role: vitabaks.autobase.firewall
+    - role: firewall
       vars:
         firewall_allowed_tcp_ports: "{{ firewall_ports_dynamic_var | default([]) | unique }}"
         firewall_additional_rules: "{{ firewall_rules_dynamic_var | default([]) | unique }}"
       when: firewall_enabled_at_boot | default(false) | bool
       tags: firewall
 
-    - role: vitabaks.autobase.resizefs
+    - role: resizefs
       when: resizefs_enabled | default(false) | bool
 
-    - role: vitabaks.autobase.hostname
-    - role: vitabaks.autobase.resolv_conf
-    - role: vitabaks.autobase.etc_hosts
-    - role: vitabaks.autobase.timezone
-    - role: vitabaks.autobase.add_repository
-    - role: vitabaks.autobase.packages
-    - role: vitabaks.autobase.sudo
-    - role: vitabaks.autobase.swap
-    - role: vitabaks.autobase.sysctl
-    - role: vitabaks.autobase.transparent_huge_pages
-    - role: vitabaks.autobase.pam_limits
-    - role: vitabaks.autobase.io_scheduler
-    - role: vitabaks.autobase.locales
-    - role: vitabaks.autobase.ntp
-    - role: vitabaks.autobase.ssh_keys
-    - role: vitabaks.autobase.copy
-    - role: vitabaks.autobase.pgpass
-    - role: vitabaks.autobase.cron
+    - role: hostname
+    - role: resolv_conf
+    - role: etc_hosts
+    - role: timezone
+    - role: add_repository
+    - role: packages
+    - role: sudo
+    - role: swap
+    - role: sysctl
+    - role: transparent_huge_pages
+    - role: pam_limits
+    - role: io_scheduler
+    - role: locales
+    - role: ntp
+    - role: ssh_keys
+    - role: copy
+    - role: pgpass
+    - role: cron
 
-    - role: vitabaks.autobase.vip_manager
+    - role: vip_manager
       when: not with_haproxy_load_balancing | default(false) | bool and
         (cluster_vip is defined and cluster_vip | length > 0)
 
-    - role: vitabaks.autobase.postgresql_users
+    - role: postgresql_users
       when: inventory_hostname in groups['primary']
 
-    - role: vitabaks.autobase.postgresql_databases
+    - role: postgresql_databases
       when: inventory_hostname in groups['primary']
 
-    - role: vitabaks.autobase.postgresql_schemas
+    - role: postgresql_schemas
       when: inventory_hostname in groups['primary']
 
-    - role: vitabaks.autobase.postgresql_privs
+    - role: postgresql_privs
       when: inventory_hostname in groups['primary']
 
-    - role: vitabaks.autobase.postgresql_index_maintenance
+    - role: postgresql_index_maintenance
 
-    - role: vitabaks.autobase.wal_g
+    - role: wal_g
       when: wal_g_install | default(false) | bool
 
   tasks:
     - name: Configure patroni
       ansible.builtin.import_role:
-        name: vitabaks.autobase.patroni
+        name: patroni
         tasks_from: config
 
     - name: Configure pgbouncer
       ansible.builtin.import_role:
-        name: vitabaks.autobase.pgbouncer
+        name: pgbouncer
         tasks_from: config
       when: pgbouncer_install | default(true) | bool
 
@@ -232,12 +232,12 @@
         - pgbackrest_auto_conf | default(true) | bool # to be able to disable auto backup settings
       tags: always
   roles:
-    - role: vitabaks.autobase.pgbackrest
+    - role: pgbackrest
       when: pgbackrest_install | default(false) | bool
   tasks:
     - name: Create pgbackrest stanza (if missing)
       ansible.builtin.import_role:
-        name: vitabaks.autobase.pgbackrest
+        name: pgbackrest
         tasks_from: stanza_create
       when: pgbackrest_install | default(false) | bool
 
@@ -248,7 +248,7 @@
     - pg_pending_restart_settings | default('') | length > 0
   tags: patroni_conf
 
-- name: vitabaks.autobase.config_pgcluster | Configure PostgreSQL Cluster and info
+- name: config_pgcluster | Configure PostgreSQL Cluster and info
   hosts: postgres_cluster
   become: true
   become_method: sudo
@@ -271,9 +271,9 @@
         no_proxy: "{{ patroni_bind_address | default(bind_address, true) }}"
       tags: always
   roles:
-    - role: vitabaks.autobase.postgresql_extensions
+    - role: postgresql_extensions
       when: current_patroni_leader_result.status | default(0) == 200
 
     # finish (info)
-    - role: vitabaks.autobase.deploy_finish
+    - role: deploy_finish
       when: current_patroni_leader_result.status | default(0) == 200

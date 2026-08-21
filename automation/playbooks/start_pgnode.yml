@@ -1,5 +1,5 @@
 ---
-- name: vitabaks.autobase.start_pgnode | Start PostgreSQL Cluster node
+- name: start_pgnode | Start PostgreSQL Cluster node
   hosts: postgres_cluster
   gather_facts: true
   become: true
@@ -8,12 +8,12 @@
   tasks:
     - name: Define bind_address
       ansible.builtin.import_role:
-        name: vitabaks.autobase.bind_address
+        name: bind_address
       when: bind_address is not defined
 
     - name: Set default variables
       ansible.builtin.import_role:
-        name: vitabaks.autobase.common
+        name: common
 
     - name: Require Patroni start node name
       ansible.builtin.assert:
@@ -37,6 +37,6 @@
 
     - name: Start services on the selected node
       ansible.builtin.import_role:
-        name: vitabaks.autobase.update
+        name: update
         tasks_from: start_services
       when: ansible_hostname == patroni_start_node_name | default('')

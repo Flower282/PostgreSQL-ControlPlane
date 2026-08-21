@@ -9,6 +9,7 @@ proxy_env: {} # yamllint disable rule:braces
 ############################################################
 # Main cluster variables
 ############################################################
+high_availability: true # or 'false' if you want to deploy a single-node PostgreSQL cluster
 
 patroni_cluster_name: "postgres-cluster" # the cluster name (must be unique for each cluster)
 
@@ -174,8 +175,6 @@ patroni_etcd_hosts: [] # list of servers of an existing etcd cluster
 ############################################################
 
 postgresql_version: 18 # Postgres major version
-postgresql_version_minor: "latest" # Postgres minor version (e.g. '1' for 18.1, or 'latest' for newest). Applicable only on RedHat-based distros.
-# postgresql_connect_addr: "{{ ansible_hostname }}" # or 'ansible_fqdn'. Set in case you would like connections to be established by domain name, not IP.
 postgresql_listen_addr: "0.0.0.0" # Listen on all interfaces. Or use "{{ bind_address }},127.0.0.1" to listen on a specific IP address.
 postgresql_port: 5432
 postgresql_encoding: "UTF8" # for bootstrap only (initdb)
@@ -185,26 +184,10 @@ postgresql_password_encryption_algorithm: "{{ 'scram-sha-256' if postgresql_vers
 postgresql_cluster_name: "{{ 'main' if ansible_os_family == 'Debian' else 'data' }}"
 postgresql_home_dir: "{{ '/var/lib/postgresql' if ansible_os_family == 'Debian' else '/var/lib/pgsql' }}"
 # You can specify custom data dir path. Example: "/pgdata/{{ postgresql_version }}/main"
-postgresql_data_dir: "\
-  {% if cloud_provider | default('') | length > 0 and volume_type | default('') | lower != 'local' %}\
-  {{ postgresql_data_dir_mount_path | default('/pgdata') }}/{{ postgresql_version }}/{{ postgresql_cluster_name }}\
-  {% else %}\
-  {{ postgresql_home_dir }}/{{ postgresql_version }}/{{ postgresql_cluster_name }}\
-  {% endif %}"
+postgresql_data_dir: "{{ postgresql_home_dir }}/{{ postgresql_version }}/{{ postgresql_cluster_name }}"
 # You can specify custom WAL dir path. Example: "/pgwal/{{ postgresql_version }}/pg_wal"
-postgresql_wal_dir: "" # if defined, symlink will be created [optional]
-postgresql_conf_dir: "\
-  {% if ansible_os_family == 'Debian' %}\
-  /etc/postgresql/{{ postgresql_version }}/{{ postgresql_cluster_name }}\
-  {% else %}\
-  {{ postgresql_data_dir }}\
-  {% endif %}"
-postgresql_bin_dir: "\
-  {% if ansible_os_family == 'Debian' %}\
-  /usr/lib/postgresql/{{ postgresql_version }}/bin\
-  {% else %}\
-  /usr/pgsql-{{ postgresql_version }}/bin\
-  {% endif %}"
+postgresql_conf_dir: "/etc/postgresql/{{ postgresql_version }}/{{ postgresql_cluster_name }}"
+postgresql_bin_dir: "/usr/lib/postgresql/{{ postgresql_version }}/bin"
 postgresql_log_dir: "/var/log/postgresql"
 postgresql_unix_socket_dir: "/var/run/postgresql"
 # Mount the statistics directory in tmpfs (if postgresql_version < 15)

@@ -1,5 +1,5 @@
 ---
-- name: vitabaks.autobase.etcd_cluster | Deploy etcd Cluster
+- name: etcd_cluster | Deploy etcd Cluster
   hosts: etcd_cluster
   become: true
   become_method: sudo
@@ -16,7 +16,7 @@
 
     - name: Define bind_address
       ansible.builtin.include_role:
-        name: vitabaks.autobase.bind_address
+        name: bind_address
       when: bind_address is not defined
       tags: always
 
@@ -62,7 +62,7 @@
       tags: firewall
 
   roles:
-    - role: vitabaks.autobase.firewall
+    - role: firewall
       environment: "{{ proxy_env | default({}) }}"
       vars:
         firewall_allowed_tcp_ports: "{{ firewall_ports_dynamic_var | default([]) | unique }}"
@@ -70,13 +70,13 @@
       when: firewall_enabled_at_boot | default(false) | bool
       tags: firewall
 
-    - role: vitabaks.autobase.hostname
-    - role: vitabaks.autobase.resolv_conf
-    - role: vitabaks.autobase.etc_hosts
-    - role: vitabaks.autobase.timezone
-    - role: vitabaks.autobase.ntp
+    - role: hostname
+    - role: resolv_conf
+    - role: etc_hosts
+    - role: timezone
+    - role: ntp
 
-    - role: vitabaks.autobase.add_repository
+    - role: add_repository
       when: etcd_installation_method | default('binary') != "binary"
 
-    - role: vitabaks.autobase.etcd
+    - role: etcd

@@ -1,5 +1,5 @@
 ---
-- name: vitabaks.autobase.stop_pgcluster | PostgreSQL Cluster shutdown
+- name: stop_pgcluster | PostgreSQL Cluster shutdown
   hosts: postgres_cluster
   gather_facts: true
   become: true
@@ -14,12 +14,12 @@
 
     - name: Define bind_address
       ansible.builtin.import_role:
-        name: vitabaks.autobase.bind_address
+        name: bind_address
       when: bind_address is not defined
 
     - name: Set default variables
       ansible.builtin.import_role:
-        name: vitabaks.autobase.common
+        name: common
 
     - name: "[Prepare] Get Patroni Cluster Leader Node"
       ansible.builtin.uri:
@@ -91,14 +91,14 @@
 
     - name: Get current Patroni passwords
       ansible.builtin.import_role:
-        name: vitabaks.autobase.pre_checks
+        name: pre_checks
         tasks_from: passwords
       vars:
         source_group: primary
         postgresql_cluster_maintenance: true
       when: patroni_superuser_password | default('') | length < 1
 
-- name: vitabaks.autobase.stop_pgcluster | Stop Patroni on secondaries
+- name: stop_pgcluster | Stop Patroni on secondaries
   hosts: secondary
   gather_facts: false
   become: true
@@ -107,10 +107,10 @@
   tasks:
     - name: Stop services
       ansible.builtin.import_role:
-        name: vitabaks.autobase.update
+        name: update
         tasks_from: stop_services
 
-- name: vitabaks.autobase.stop_pgcluster | Stop Patroni on primary
+- name: stop_pgcluster | Stop Patroni on primary
   hosts: primary
   gather_facts: false
   become: true
@@ -119,5 +119,5 @@
   tasks:
     - name: Stop services
       ansible.builtin.import_role:
-        name: vitabaks.autobase.update
+        name: update
         tasks_from: stop_services
